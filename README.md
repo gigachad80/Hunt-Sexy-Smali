@@ -1,122 +1,271 @@
-# 🕵️‍♂️ Hunt Sexy Smali :
-### Hunt URLs, IoC, IPs, Base64 encoded C2s & secrets in Smali files with 95% reduction of false positives
+<div align="center">
 
-**APK Smali Forensics & IOC Hunter**  
-*Author: [github.com/gigachad80](https://github.com/gigachad80)*
+# Hunt Sexy Smali
 
-**Hunt Sexy Smali** is a powerful, regex-driven forensics tool designed for analyzing decompiled Android applications (APK). It scans `.smali` files to hunt down Indicators of Compromise (IOCs), Command & Control (C2) servers, hidden database endpoints, hardcoded credentials, and encoded payloads.
+[![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://golang.org)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-green?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey?style=flat-square)]()
+[![Type](https://img.shields.io/badge/Type-Static%20Analysis-red?style=flat-square)]()
+[![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square)]()
 
----
+**Regex-driven IOC hunter for decompiled Android APK smali files.**  
+Hunt URLs, IPs, secrets, encoded C2s, and database endpoints — with up to 97% false positive reduction.
 
-## ✨ Features
+[Installation](#installation) · [Modes](#modes-of-operation) · [Flags](#cli-reference) · [Examples](#usage-examples) · [Output](#output-structure)
 
-*   **Endpoint & DB Hunter**: Detects HTTP/HTTPS URLs, Firebase, Supabase, MongoDB Atlas, MySQL, SQLite, RealmDB, and Redis connection strings.
-*   **Secret & API Key Scanner**: Identifies hardcoded tokens, API keys, and access secrets.
-*   **IP Address Extraction**: Finds hardcoded IP addresses with port validation.
-*   **Mail Spy**: Extracts email addresses (Gmail, Outlook, Proton, Yahoo, and custom domains).
-*   **Advanced Base64 Decoding**: Not just standard UTF-8. HSS attempts to decode Base64 strings across multiple encodings:
-    *   UTF-8 / ASCII, UTF-16 (LE/BE), ISO-8859-1 (Latin-1), Windows-1252
-    *   KOI8-R (Russian), GB18030 (Chinese), Shift-JIS & EUC-JP (Japanese)
-    *   Falls back to a binary Hex Dump if text decoding fails.
-*   **Automated Reporting**: Generates categorized `.txt` reports and optionally emails them via SMTP.
+</div>
 
 ---
 
-## 🚀 Installation
+## Table of Contents
 
-Ensure you have [Go](https://golang.org/doc/install) installed. Clone the repository and compile the binary:
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Modes of Operation](#modes-of-operation)
+  - [Standard Mode](#1-standard-mode--i)
+  - [Reload Mode](#2-reload-mode--reload)
+- [Base64 Filter Levels](#base64-false-positive-filter--fl)
+- [CLI Reference](#cli-reference)
+- [Usage Examples](#usage-examples)
+- [Output Structure](#output-structure)
+- [False Positive Reduction : How It Works](#false-positive-reduction--how-it-works)
+- [License](#license)
+
+---
+
+## Overview
+
+Hunt Sexy Smali (HSS) is a command-line forensics tool written in Go for static analysis of decompiled Android applications. It recursively walks `.smali` files produced by tools like `apktool`, `jadx`, or `apkeasy` and applies regex-based hunting across multiple IOC categories.
+
+The tool is designed for malware analysts, mobile security researchers, and incident responders who need to extract indicators from APKs quickly and with minimal noise.
+
+> [!NOTE]
+> HSS operates entirely on decompiled smali source — it does not decompile APKs itself. Run `apktool d target.apk` first, then point HSS at the output folder and then it start hunting recursively for all smali files.
+
+---
+
+## Features
+
+| Category | What It Hunts |
+|----------|--------------|
+| Network Endpoints | HTTP and HTTPS URLs |
+| Database / BaaS | Firebase, Supabase, MongoDB Atlas, MySQL, SQLite, RealmDB, Redis |
+| Secrets | Hardcoded API keys, access tokens, auth tokens |
+| IP Addresses | IPv4 with port validation (ports 1–65535 only) |
+| Email Addresses | Gmail, Outlook/Hotmail/Live, ProtonMail, Yahoo, custom domains |
+| Base64 Payloads | Multi-encoding decode: UTF-8, UTF-16 LE/BE, ISO-8859-1, Windows-1252, KOI8-R, GB18030, Shift-JIS, EUC-JP, binary hex fallback |
+
+
+---
+
+## Installation
+
+Go 1.20 or later is required.
 
 ```bash
+git clone https://github.com/gigachad80/hunt-sexy-smali.git
+cd hunt-sexy-smali
 go build -o hunt-sexy-smali main.go
 ```
 
+Verify the build:
+
+```bash
+./hunt-sexy-smali -help
+```
+
 ---
 
-## 🛠️ Modes of Operation
+## Modes of Operation
 
-The tool operates in two primary modes to accommodate different workflows:
+HSS offers three operation modes. When using `-i`, an interactive prompt asks you to choose between Batch and Stream before scanning begins.
+
+---
 
 ### 1. Standard Mode (`-i`)
-Scans a freshly decompiled APK folder (e.g., via `apktool`).
-*   **Phase 1 (Collection)**: Recursively finds all `.smali` files, flattens them into a single `All_Smali` directory (preserving the original path in a custom file header).
-*   **Phase 2 (Hunting)**: Scans the collected files for IOCs.
+
+HSS recursively walks the decompiled APK folder and hunts for IOCs. At startup, an interactive prompt asks you to select one of two sub-modes:
+
 ```bash
-./hunt-sexy-smali -i /path/to/decompiled_apk -o /path/to/output
+./hunt-sexy-smali -i /path/to/decompiled_apk -o ./output -h -ip -b -m
 ```
+
+**Batch (prompt choice `1`)**
+
+- Copies all `.smali` files into a flat `All_Smali/` directory, embedding the original relative path as a header comment inside each file
+- Hunt runs after full collection is complete
+- `All_Smali/` persists on disk, enabling `-reload` for future re-scans without re-copying
+- Best for: small/medium APKs, repeated analysis sessions
+- Disk: HIGH — Memory: LOW
+
+**Stream (prompt choice `2`)**
+
+- No `All_Smali/` folder is created
+- Each file is read into memory, hunted immediately, then discarded if no hits are found
+- Only the findings report is written to disk
+- Best for: large APKs (100 MB+), one-time scans
+- Disk: ZERO — Memory: LOW
+
+> [!IMPORTANT]
+> Stream Mode is incompatible with `-reload`. The reload flag requires an existing `All_Smali/` folder, which Stream Mode never creates. When `-reload` is provided, HSS skips the scan mode prompt entirely.
+
+---
 
 ### 2. Reload Mode (`-reload`)
-If you have already extracted and flattened `.smali` files using Standard Mode, you can bypass the time-consuming collection phase and re-hunt the existing `All_Smali` folder instantly with different flags . It's useful in case if you want to scan again in future .
+
+USeful for incase you want to run scan again inf future . Re-hunts an existing `All_Smali/` folder from a previous Batch Mode run without re-copying any files. Useful for changing filter levels, hunting new categories, or re-extracting Base64 with a different `-fl` value.
+
 ```bash
-./hunt-sexy-smali -reload /path/to/output/All_Smali -b -fl 2
+./hunt-sexy-smali -reload ./HSS_Output/All_Smali -b -fl 2
+```
+
+Output is written to `HSS_Reload_Output/` next to the `All_Smali/` folder.
+
+> [!NOTE]
+> Reload Mode always operates as Batch — no scan mode prompt is shown. Stream Mode has no reload equivalent since it never persists smali files to disk.
+
+---
+
+## Base64 False Positive Filter (`-fl`)
+
+Smali files are dense with Base64-like strings that are not encoded payloads — class descriptors, library signatures, resource identifiers. HSS applies a layered filter system to eliminate this noise when the `-b` flag is used.
+
+> [!NOTE]
+> Base64 padding (`=` or `==`) is enforced at the regex level and applies across all filter levels including FL0.
+
+> [!NOTE]
+> If you use `-b` without providing `-fl`, an interactive menu launches automatically. You can also pass `-fl` directly to skip the prompt.
+
+| Level | Name | What It Removes | Noise Reduction |
+|-------|------|-----------------|-----------------|
+| `0` | RAW | Nothing. Every matching string passes through. Use for paranoid research or unknown custom APKs. | 0% |
+| `1` | BASIC | Strings under 20 characters. Strings with no `+`, `=`, or `/` (not valid base64 structure). Strings with 3+ slashes (path-like). Strings starting with `#` (resource IDs, hex colors). | ~65% |
+| `2` | FULL (recommended) | Everything FL1 removes, plus 60+ known Android/JVM/third-party library class descriptor prefixes: Android, AndroidX, Dalvik, Java stdlib, Kotlin, Google GMS/Firebase/Material, OkHttp v2+v3, Okio, Retrofit, RxJava 2+3, ReactiveStreams, Glide, Picasso, Coil, Fresco, Dagger, Facebook SDK, Apache, BouncyCastle, Crashlytics, Mixpanel, AppsFlyer, Timber, JetBrains, Dexter, EasyDeviceInfo, Toasty, Klinker SMS, and more. | ~95–97% |
+
+**Multi-encoding decode chain** (applied after filtering):
+
+When a valid Base64 string passes all filters, HSS attempts to decode it through this chain in order, stopping at the first successful result:
+
+```
+UTF-8 → UTF-16LE → UTF-16BE → Windows-1252 → ISO-8859-1 → KOI8-R → Shift-JIS → EUC-JP → GB18030 → Hex dump
 ```
 
 ---
 
-## 🎛️ The Base64 False Positive Filter (`-fl`)
+## CLI Reference
 
-Smali code is notoriously filled with benign Base64-like strings (e.g., class descriptors, library signatures). HSS includes a robust, 3-tier filtering system to eliminate noise when hunting Base64 (`-b`):
+```
+Usage: hunt-sexy-smali -i <path> [flags]
+       hunt-sexy-smali -reload <All_Smali_path> [flags]
+```
 
-*   **FL 0 (RAW)**: Zero filters. Everything passes through. *Use for research or paranoid scanning. Expect high noise.*
-*   **FL 1 (BASIC)**: Structural filters only. Drops strings under 20 chars, strings lacking standard Base64 characters (`+`, `=`, `/`), file paths, and hex colors. *(~65% noise reduction)*
-*   **FL 2 (FULL)**: Basic + Known Library Filter. Ignores over 60+ benign Android, Java, Kotlin, and common third-party SDK class descriptors (e.g., Firebase, OkHttp, Glide, Facebook SDK). **(Recommended: ~95-97% noise reduction)**
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `-i` | string | — | Input path of the decompiled APK folder |
+| `-o` | string | `HSS_Output` | Output folder for findings and `All_Smali/` |
+| `-reload` | string | — | Re-hunt on existing `All_Smali/` folder, skips collection |
+| `-h` | bool | false | Hunt HTTP/HTTPS URLs + Firebase/Supabase/DB endpoints |
+| `-ip` | bool | false | Hunt IPv4 addresses with port validation (1–65535) |
+| `-b` | bool | false | Hunt and decode Base64 strings (multi-encoding aware) |
+| `-m` | bool | false | Hunt email addresses (Gmail, Outlook, Proton, Yahoo, custom) |
+| `-fl` | int | interactive | Base64 filter level: `0`=raw, `1`=basic, `2`=full |
+|
 
-*Note: If you use the `-b` flag without providing `-fl`, the tool will launch an interactive menu for you to select the level.*
+> [!NOTE]
+> If no hunting flags (`-h`, `-ip`, `-b`, `-m`) are provided, HSS defaults to enabling all four modules.
 
 ---
 
-## 💻 Usage & Flags
+## Usage Examples
 
-```text
-Usage: hunt-sexy-smali -i <apk> -o <out> [FLAGS]
-
-Input / Output:
-  -i string      Input path of the decompiled APK folder
-  -o string      Output folder for findings and All_Smali (default "HSS_Output")
-  -reload string Re-hunt on existing All_Smali folder (skips collection)
-
-Hunting Flags (If none are specified, defaults to ALL):
-  -h             Hunt HTTP/HTTPS URLs + Firebase/Supabase/DB endpoints
-  -ip            Hunt IP addresses
-  -b             Hunt and decode Base64 (multi-encoding aware)
-  -m             Hunt email addresses
-  -fl int        Base64 filter level: 0=raw, 1=basic, 2=full
-
-Reporting/Email:
-  -ms string     SMTP server:port (e.g., smtp.gmail.com:587)
-  -mf string     From address for emailed report
-  -mt string     To address for emailed report
+**Full scan, all modules, interactive mode selection:**
+```bash
+./hunt-sexy-smali -i ./decompiled_apk
 ```
 
-### Examples
-
-**1. The "Kitchen Sink" Scan (Default)**  
-Run all modules (URLs, IPs, Base64, Mail) with standard output.
+**Hunt only network endpoints and IPs:**
 ```bash
-./hunt-sexy-smali -i ./malware_apk
+./hunt-sexy-smali -i ./decompiled_apk -h -ip -o ./findings
 ```
 
-**2. Targeted Network & DB Hunting**  
-Only look for URLs, endpoints, and IP addresses.
+**Hunt Base64 with full library filter (no prompt):**
 ```bash
-./hunt-sexy-smali -i ./malware_apk -h -ip
+./hunt-sexy-smali -i ./decompiled_apk -b -fl 2
 ```
 
-**3. Stealth/Paranoid Base64 Extraction**  
-Hunt *only* for Base64 using the raw filter level (FL 0), dropping all other checks.
+**Paranoid raw Base64 scan — no filters, everything included:**
 ```bash
-./hunt-sexy-smali -i ./malware_apk -b -fl 0
+./hunt-sexy-smali -i ./decompiled_apk -b -fl 0
 ```
 
-**4. Automated Scan & Email Report**  
-Run all checks and email the final IOC report to a SOC analyst.
+**Re-hunt existing All_Smali with email and IP modules:**
 ```bash
-./hunt-sexy-smali -i ./malware_apk -ms "smtp.example.com:587" -mf "bot@example.com" -mt "analyst@example.com"
+./hunt-sexy-smali -reload ./HSS_Output/All_Smali -m -ip
 ```
 
 ---
 
-## 📁 Output Structure
+## Output Structure
 
-Upon completion, your output directory (`HSS_Output` by default) will contain:
-1.  **`All_Smali/`**: A flattened directory of every single `.smali` file extracted from the APK.
-2.  **`HSS_findings_YYYYMMDD_HHMMSS.txt`**: A cleanly formatted summary report categorizing every finding, its source file, the raw extracted value, and the decoded plaintext (if applicable).
+**Batch Mode:**
+
+```
+HSS_Output/
+├── All_Smali/
+│   ├── smali__com__example__MainActivity.smali
+│   ├── smali__com__example__network__ApiClient.smali
+│   └── smali_classes2__com__evil__Dropper.smali
+│
+└── HSS_findings_20260428_153045.txt
+```
+
+**Stream Mode:**
+
+```
+HSS_Output/
+└── HSS_findings_20260428_153045.txt
+```
+
+**Reload Mode:**
+
+```
+HSS_Reload_Output/
+└── HSS_findings_20260428_160012.txt
+```
+
+
+---
+
+## False Positive Reduction : How It Works
+
+HSS applies filters in layers. FL1 filters run first; FL2 adds the library prefix layer on top.
+
+| Filter | Level | Technique | Targets |
+|--------|-------|-----------|---------|
+| Minimum length 20 | FL1 | Length check | Short noise strings |
+| No `+`/`=`/`/` present | FL1 | Char check | Plain identifiers with no base64 structure |
+| Slash density ≥ 3 | FL1 | Count check | File paths disguised as base64 |
+| `#` prefix | FL1 | Prefix check | Android resource IDs and hex color values |
+| Smali `L` descriptor + 2+ slashes | FL2 | Structural | Generic class paths like `Lcom/example/Foo` |
+| 60+ known library prefixes | FL2 | Prefix list | `Landroid/`, `Ljava/`, `Lkotlin/`, `Lokhttp3/`, `Lcom/google/`, `Lcom/facebook/`, etc. |
+| Array descriptors `[B`, `[I` | FL2 | Prefix check | Dalvik primitive array type signatures |
+| Terminating `;` | FL2 | Suffix check | Smali class reference terminators |
+| Dot-separated lowercase paths | FL2 | Heuristic | Package paths encoded as strings |
+
+---
+
+## License
+
+GNU Affero General Public License v3.0 — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Built with Go — Stay sexy.
+
+Contact :
+[github.com/gigachad80](https://github.com/gigachad80) · `pookielinuxuser@tutamail.com`
+
+</div>
