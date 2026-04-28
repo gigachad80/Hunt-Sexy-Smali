@@ -9,7 +9,7 @@
 [![Maintained](https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square)]()
 
 **Regex-driven IOC hunter for decompiled Android APK smali files.**  
-Hunt URLs, IPs, secrets, encoded C2s, and database endpoints - with up to 97% false positive reduction.
+Hunt URLs, IPs, secrets, Base64 encoded C2s, and database endpoints - with up to 97% false positive reduction.
 
 [Installation](#installation) · [Modes](#modes-of-operation) · [Flags](#cli-reference) · [Examples](#usage-examples) · [Output](#output-structure)
 
