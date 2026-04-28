@@ -1,3 +1,3 @@
-module sexysmali.go
+module main.go
 
 go 1.25.6
