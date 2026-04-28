@@ -271,3 +271,6 @@ Contact :
 [github.com/gigachad80](https://github.com/gigachad80) · `pookielinuxuser@tutamail.com`
 
 </div>
+
+##### First release : April 28, 2026
+##### Last updated : April 28,2026
