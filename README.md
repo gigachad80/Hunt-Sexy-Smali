@@ -64,9 +64,9 @@ The tool is designed for malware analysts, mobile security researchers, and inci
 Go 1.20 or later is required.
 
 ```bash
-git clone https://github.com/gigachad80/hunt-sexy-smali.git
-cd hunt-sexy-smali
-go build -o hunt-sexy-smali main.go
+git clone https://github.com/gigachad80/Hunt-Sexy-Smali.git
+cd Hunt-Sexy-Smali
+go build -o hunt-sexy-smali sexysmali.go
 ```
 
 Verify the build:
