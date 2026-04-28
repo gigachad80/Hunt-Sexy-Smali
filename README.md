@@ -38,9 +38,9 @@ Hunt URLs, IPs, secrets, Base64 encoded C2s, and database endpoints - with up to
 
 ## Overview
 
-Hunt Sexy Smali (HSS) is a command-line forensics tool written in Go for static analysis of decompiled Android applications. It recursively walks `.smali` files produced by tools like `apktool`, `jadx`, or `apkeasy` and applies regex-based hunting across multiple IOC categories.
+Hunt Sexy Smali (HSS) is a command-line Dmali forensics tool written in Go for static analysis of decompiled Android applications. It recursively walks `.smali` files produced by tools like `apktool`, `jadx`, or `apkeasy` and applies regex-based hunting across multiple IOC categories.
 
-The tool is designed for malware analysts, mobile security researchers, and incident responders who need to extract indicators from APKs quickly and with minimal noise.
+The tool is designed for malware analysts, mobile security researchers who need to extract indicators from APKs quickly and with minimal noise.
 
 > [!NOTE]
 > HSS operates entirely on decompiled smali source - it does not decompile APKs itself. Run `apktool d target.apk` first, then point HSS at the output folder and then it start hunting recursively for all smali files.
