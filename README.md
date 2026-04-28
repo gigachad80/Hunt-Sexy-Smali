@@ -17,6 +17,13 @@ Hunt URLs, IPs, secrets, Base64 encoded C2s, and database endpoints - with up to
 
 </div>
 
+## Demo
+
+
+<img width="1506" height="808" alt="Screenshot 2026-04-28 164735" src="https://github.com/user-attachments/assets/a5501aeb-8588-4b6e-a687-829ea0d67c88" />
+
+
+
 ---
 
 ## Table of Contents
