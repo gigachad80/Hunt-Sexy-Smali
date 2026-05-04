@@ -57,8 +57,8 @@ var (
 var smaliKnownPrefixes = []string{
 
 	// ── 1. Core Android & AndroidX ───────────────────────────────────────────
-	"Landroid/",              // core Android framework
-	"Landroidx/",             // ALL androidx: appcompat, core, lifecycle, room, fragment, transition...
+	"Landroid/",              // core Android framework + telephony/gsm/* covered here via L1
+	"Landroidx/",             // ALL androidx: appcompat, core, lifecycle, room, compose, media3...
 	"Landroid/support/",      // old support library (pre-androidx)
 	"Lcom/android/internal/", // AOSP internal framework
 	"Lcom/android/mms/",      // AOSP MMS classes
@@ -67,115 +67,194 @@ var smaliKnownPrefixes = []string{
 
 	// ── 2. Java Standard Library ─────────────────────────────────────────────
 	"Ljava/",  // java.lang, java.io, java.util, java.net ...
-	"Ljavax/", // javax.annotation, javax.net, javax.crypto ...
+	"Ljavax/", // javax.annotation, javax.net, javax.crypto, javax.inject ...
 	"Lsun/",   // sun.* JVM internals
 	"Lsunx/",
 	"Ljdk/", // jdk.* internals
 
 	// ── 3. Kotlin ────────────────────────────────────────────────────────────
 	"Lkotlin/",  // kotlin stdlib, coroutines, reflect
-	"Lkotlinx/", // kotlinx: coroutines, serialization, datetime
+	"Lkotlinx/", // kotlinx: coroutines, serialization, datetime, collections
 
-	// ── 4. Google / Firebase / Material / GMS ────────────────────────────────
-	"Lcom/google/android/gms/",      // Google Play Services (auth, maps, location ...)
-	"Lcom/google/android/material/", // Material Design UI components
-	"Lcom/google/firebase/",         // Firebase SDK (all products)
-	"Lcom/google/firebase/crashlytics/",
-	"Lcom/google/gson/",     // Gson JSON
-	"Lcom/google/common/",   // Guava
-	"Lcom/google/protobuf/", // Protocol Buffers
-	"Lcom/google/",          // catch-all for remaining com.google.*
+	// ── 4. Google (catch-all — covers GMS, Firebase, Material, Gson,
+	//              Guava, Protobuf, MLKit, ExoPlayer, Accompanist,
+	//              Dagger/Hilt, ZXing, Play Core, Cronet, DataTransport,
+	//              Recaptcha, Truth, and every other com.google.* SDK)
+	// NOTE: All "Lcom/google/android/gms/sub/", "Lcom/google/firebase/sub/"
+	//       entries are REDUNDANT — this single prefix swallows them all.
+	"Lcom/google/",
 
 	// ── 5. Networking ────────────────────────────────────────────────────────
-	"Lokhttp3/",             // OkHttp v3
-	"Lcom/squareup/okhttp/", // OkHttp v2
-	"Lokio/",                // Okio (I/O lib used by OkHttp/Retrofit)
-	"Lcom/squareup/okio/",
+	"Lokhttp3/",               // OkHttp v3
+	"Lokio/",                  // Okio (I/O lib used by OkHttp/Retrofit)
 	"Lretrofit2/",             // Retrofit 2
-	"Lcom/squareup/retrofit/", // Retrofit 1
-	"Lcom/squareup/inject/",
+	"Lcom/squareup/",          // OkHttp v2, Okio, Retrofit 1, Picasso, Inject, LeakCanary, Wire
 	"Lcom/androidnetworking/", // Fast Android Networking library
+	"Lcom/koushikdutta/",      // AndroidAsync / Ion
+	"Lorg/chromium/net/",      // Cronet — Google HTTP stack (also under com/google but keep explicit)
+	"Lio/ktor/",               // Ktor — Kotlin HTTP client
+	"Lorg/java_websocket/",    // Java-WebSocket lib
+	"Lcom/neovisionaries/ws/", // nv-websocket-client
+	"Lcom/datadog/android/",   // Datadog RUM / APM tracing
 
 	// ── 6. DI / Architecture ─────────────────────────────────────────────────
-	"Ldagger/",
-	"Ljavax/inject/",
+	// NOTE: Dagger (com/google/dagger/, hilt/) covered by "Lcom/google/" above
+	// These are non-Google DI frameworks:
+	"Ldagger/",    // Dagger 2 root package (separate from com/google/dagger)
+	"Lhilt/",      // Hilt generated code root (separate from com/google/dagger/hilt)
+	"Lorg/koin/",  // Koin DI — Kotlin-first DI framework
+	"Ltoothpick/", // Toothpick DI
 
 	// ── 7. Image Loading ─────────────────────────────────────────────────────
-	"Lcom/bumptech/glide/",
-	"Lcom/squareup/picasso/",
-	"Lcoil/",
-	"Lcom/facebook/fresco/",
+	"Lcom/bumptech/glide/",  // Glide
+	"Lcom/github/bumptech/", // Glide alternate path
+	"Lcoil/",                // Coil
+	"Lio/coil/",             // Coil alternate path
+	"Lcom/facebook/fresco/", // Fresco
 	"Lcom/facebook/imagepipeline/",
 	"Lcom/facebook/drawee/",
+	"Lcom/airbnb/lottie/",              // Lottie animations
+	"Lcom/yalantis/ucrop/",             // uCrop image cropper
+	"Lcom/theartofdev/edmodo/cropper/", // Android Image Cropper
+	"Lcom/zhihu/matisse/",              // Matisse image picker
+	"Lcom/github/chrisbanes/",          // PhotoView / TouchImageView
 
 	// ── 8. Reactive ──────────────────────────────────────────────────────────
-	"Lio/reactivex/",
-	"Lio/reactivex/rxjava3/",
-	"Lio/reactivex/rxjava2/",
+	"Lio/reactivex/", // RxJava 2 + RxJava 3 root
 	"Lcom/jakewharton/rxbinding/",
-	"Lorg/reactivestreams/", // Reactive Streams standard (used by RxJava)
+	"Lorg/reactivestreams/", // Reactive Streams spec (used by RxJava)
 
 	// ── 9. Serialization / Parsing ───────────────────────────────────────────
-	"Lcom/fasterxml/jackson/",
-	"Lorg/json/",
-	"Lorg/msgpack/",
-	"Lorg/w3c/dom/", // W3C DOM parsers
-	"Lorg/xml/",     // XML parsers
-	"Lorg/xmlpull/", // XmlPull parser (used by Android itself)
+	"Lcom/fasterxml/jackson/", // Jackson JSON
+	"Lorg/json/",              // Android's built-in JSON
+	"Lorg/msgpack/",           // MessagePack
+	"Lorg/w3c/dom/",           // W3C DOM parsers
+	"Lorg/xml/",               // XML parsers
+	"Lorg/xmlpull/",           // XmlPull parser (Android internal)
 
-	// ── 10. Apache Commons & HTTP ─────────────────────────────────────────────
-	"Lorg/apache/", // Apache Commons, HTTP components, logging
+	// ── 10. Apache Commons & HTTP ────────────────────────────────────────────
+	"Lorg/apache/", // Apache Commons, HTTP components, logging, codec
 
-	// ── 11. Security / Crypto ─────────────────────────────────────────────────
+	// ── 11. Security / Crypto ────────────────────────────────────────────────
 	"Lorg/bouncycastle/",
 	"Lorg/conscrypt/",
 
-	// ── 12. Analytics / Crash / Attribution ───────────────────────────────────
-	"Lcom/crashlytics/",
+	// ── 12. Analytics / Crash Reporting / Attribution ────────────────────────
+	// NOTE: Firebase Crashlytics / Analytics / Performance covered by "Lcom/google/"
+	"Lcom/crashlytics/", // Legacy Fabric Crashlytics (pre-Google acquisition)
 	"Lcom/mixpanel/",
 	"Lcom/amplitude/",
 	"Lcom/appsflyer/",
 	"Lcom/adjust/sdk/",
+	"Lcom/segment/analytics/", // Segment
+	"Lcom/localytics/",        // Localytics
+	"Lcom/flurry/",            // Flurry Analytics + Ads
+	"Lcom/singular/sdk/",      // Singular attribution
+	"Lcom/kochava/",           // Kochava attribution
+	"Lcom/branch/",            // Branch.io deep links
+	"Lio/branch/",             // Branch.io alternate package
+	"Lcom/clevertap/",         // CleverTap
+	"Lcom/moengage/",          // MoEngage
+	"Lcom/moengageinapp/",     // MoEngage in-app messaging
+	"Lcom/urbanairship/",      // Airship (Urban Airship) push
+	"Lcom/leanplum/",          // Leanplum A/B + push
+	"Lcom/tenjin/",            // Tenjin attribution
+	"Lcom/onesignal/",         // OneSignal push notifications
 
-	// ── 13. Ads ───────────────────────────────────────────────────────────────
-	"Lcom/unity3d/ads/",
-	"Lcom/chartboost/",
+	// ── 13. Push / Engagement / CRM ──────────────────────────────────────────
+	// NOTE: FCM covered by "Lcom/google/"
+	"Lcom/braze/",  // Braze (formerly Appboy)
+	"Lcom/appboy/", // Braze legacy prefix
+	"Lbo/app/",     // Braze internal generated package
 
-	// ── 14. Facebook SDK ──────────────────────────────────────────────────────
-	"Lcom/facebook/", // Facebook Login, Share, Analytics, Ads
-	"Lbolts/",        // Bolts (Facebook task lib)
+	// ── 14. Ads Networks ─────────────────────────────────────────────────────
+	// NOTE: AdMob covered by "Lcom/google/"
+	"Lcom/unity3d/ads/", // Unity Ads
+	"Lcom/chartboost/",  // Chartboost
+	"Lcom/applovin/",    // AppLovin MAX
+	"Lcom/ironsource/",  // IronSource (now Unity LevelPlay)
+	"Lcom/vungle/",      // Vungle / Liftoff Monetize
+	"Lcom/inmobi/",      // InMobi
+	"Lcom/mbridge/",     // Mintegral
+	"Lcom/startapp/",    // StartApp
+	"Lcom/tapjoy/",      // Tapjoy
+	"Lnet/pubnative/",   // PubNative / HyprMX
+	"Lcom/ogury/",       // Ogury
 
-	// ── 15. Payment ───────────────────────────────────────────────────────────
+	// ── 15. Facebook SDK ─────────────────────────────────────────────────────
+	"Lcom/facebook/", // Facebook Login, Share, Analytics, Ads, Fresco
+	"Lbolts/",        // Bolts — Facebook async task lib
+
+	// ── 16. Payment / FinTech ────────────────────────────────────────────────
 	"Lcom/razorpay/",
 	"Lcom/paytm/",
+	"Lnet/one97/paytm/", // Paytm alternate package
 	"Lcom/stripe/",
+	"Lcom/braintreepayments/", // Braintree (PayPal)
+	"Lcom/paypal/",
+	"Lcom/phonepe/",
+	"Lbharat/pe/", // BharatPe
+	"Lcom/cashfree/",
+	"Lcom/ccavenue/",
 
-	// ── 16. Logging ───────────────────────────────────────────────────────────
-	"Ltimber/",
+	// ── 17. Database / Storage / ORM ─────────────────────────────────────────
+	// NOTE: Firebase Realtime DB / Firestore covered by "Lcom/google/"
+	// NOTE: Room covered by "Landroidx/"
+	"Lio/realm/",                // Realm (modern Java/Kotlin SDK package)
+	"Lcom/couchbase/lite/",      // Couchbase Lite
+	"Lnet/sqlcipher/",           // SQLCipher — encrypted SQLite
+	"Lorg/greenrobot/greendao/", // GreenDAO ORM
+	"Lio/objectbox/",            // ObjectBox DB
+	"Lorg/hibernate/",           // Hibernate ORM (rare but seen)
+	"Lcom/j256/ormlite/",        // ORMLite
+
+	// ── 18. Logging ──────────────────────────────────────────────────────────
+	"Ltimber/",                 // Timber root
+	"Lcom/jakewharton/timber/", // Timber full path
 	"Lch/qos/logback/",
 	"Lorg/slf4j/",
 
-	// ── 17. JetBrains / IntelliJ annotations ─────────────────────────────────
+	// ── 19. UI / Component Libraries ─────────────────────────────────────────
+	"Lcom/airbnb/epoxy/",               // Epoxy RecyclerView adapter
+	"Lcom/afollestad/materialdialogs/", // Material Dialogs
+	"Lcom/github/ybq/",                 // SpinKit loading animations
+	"Lcom/wang/avi/",                   // AVLoadingIndicatorView
+	"Lcom/journeyapps/barcodescanner/", // ZXing Android Embedded
+	"Lme/dm77/barcodescannerlib/",      // Barcode scanner lib
+	"Les/dmoral/toasty/",               // Toasty — custom toast
+	"Lcom/github/chrisbanes/",          // PhotoView
+
+	// ── 20. Date / Time ──────────────────────────────────────────────────────
+	"Lcom/jakewharton/threetenabp/", // ThreeTenABP — Java 8 time backport
+	"Lorg/threeten/",                // ThreeTen-Backport core
+
+	// ── 21. JetBrains / IntelliJ annotations ─────────────────────────────────
 	"Lorg/intellij/",
 	"Lorg/jetbrains/",
 	"Lcom/intellij/",
 
-	// ── 18. JVM internals ────────────────────────────────────────────────────
-	"Lorg/objectweb/", // ASM bytecode lib
+	// ── 22. JVM / Bytecode Internals ─────────────────────────────────────────
+	"Lorg/objectweb/", // ASM bytecode manipulation lib
 
-	// ── 19. Third-party UI / Utility libs (APK-specific noise, from real cases)
-	"Lcom/karumi/dexter/",             // Dexter — runtime permissions library
-	"Lgithub/nisrulz/easydeviceinfo/", // EasyDeviceInfo — device info gathering
-	"Lme/everything/providers/",       // Android-Providers — queries calls/contacts/SMS
+	// ── 23. Testing (present in non-stripped / debug APKs) ───────────────────
+	"Lorg/junit/",
+	"Lorg/mockito/",
+	"Lorg/robolectric/",
+	"Lcom/squareup/leakcanary/", // LeakCanary — covered by squareup/ but explicit for clarity
+
+	// ── 24. Third-party Utility / Device-Info / Permissions ──────────────────
+	"Lcom/karumi/dexter/",             // Dexter — runtime permissions
+	"Lgithub/nisrulz/easydeviceinfo/", // EasyDeviceInfo — device fingerprinting
+	"Lme/everything/providers/",       // Android-Providers — calls/contacts/SMS reader
 	"Lcom/pixplicity/easyprefs/",      // EasyPrefs — SharedPreferences wrapper
-	"Lcom/github/tamir7/contacts/",    // Contacts — contact reading library
-	"Lfr/quentinklein/",               // SLT / Simple Location Tracker
-	"Les/dmoral/toasty/",              // Toasty — custom toast UI
+	"Lcom/github/tamir7/contacts/",    // Contacts reader library
+	"Lfr/quentinklein/",               // Simple Location Tracker
 	"Leu/amirs/",                      // JSON/utility lib
-	"Lcom/klinker/android/",           // Talon / Klinker SMS library
+	"Lcom/klinker/android/",           // Klinker SMS / Talon
+	"Lnet/yslibrary/",                 // Various Android utils
 
-	// ── 20. Squareup misc ────────────────────────────────────────────────────
-	"Lcom/squareup/", // catch-all for remaining squareup libs
+	// ── 25. Jakewharton misc ─────────────────────────────────────────────────
+	"Lcom/jakewharton/", // Covers Timber, ThreeTenABP, RxBinding, Picasso, etc.
 }
 
 // isSmaliDescriptor — combined L1 + L2 filter
