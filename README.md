@@ -70,6 +70,10 @@ The tool is designed for malware analysts, mobile security researchers who need 
 
 ## Installation
 
+ Directly download it from 👉[here](https://github.com/gigachad80/Hunt-Sexy-Smali/releases/tag/v1.0.0)👈
+
+OR 
+
 Go 1.20 or later is required.
 
 ```bash
@@ -83,8 +87,6 @@ Verify the build:
 ```bash
 ./hunt-sexy-smali -help
 ```
-### OR directly download it from 👉[here](https://github.com/gigachad80/Hunt-Sexy-Smali/releases/tag/v1.0.0)👈
-
 
 ## Modes of Operation
 
