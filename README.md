@@ -70,7 +70,7 @@ The tool is designed for malware analysts, mobile security researchers who need 
 
 ## Installation
 
- Directly download it from 👉[here](https://github.com/gigachad80/Hunt-Sexy-Smali/releases/tag/v1.0.0)👈
+ Directly download it from 👉[here](https://github.com/gigachad80/Hunt-Sexy-Smali/releases/tag/v2.0.0)👈
 
 OR 
 
