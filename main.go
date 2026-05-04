@@ -106,13 +106,10 @@ var smaliKnownPrefixes = []string{
 	"Ltoothpick/", // Toothpick DI
 
 	// ── 7. Image Loading ─────────────────────────────────────────────────────
-	"Lcom/bumptech/glide/",  // Glide
-	"Lcom/github/bumptech/", // Glide alternate path
-	"Lcoil/",                // Coil
-	"Lio/coil/",             // Coil alternate path
-	"Lcom/facebook/fresco/", // Fresco
-	"Lcom/facebook/imagepipeline/",
-	"Lcom/facebook/drawee/",
+	"Lcom/bumptech/glide/",             // Glide
+	"Lcom/github/bumptech/",            // Glide alternate path
+	"Lcoil/",                           // Coil
+	"Lio/coil/",                        // Coil alternate path
 	"Lcom/airbnb/lottie/",              // Lottie animations
 	"Lcom/yalantis/ucrop/",             // uCrop image cropper
 	"Lcom/theartofdev/edmodo/cropper/", // Android Image Cropper
@@ -120,8 +117,7 @@ var smaliKnownPrefixes = []string{
 	"Lcom/github/chrisbanes/",          // PhotoView / TouchImageView
 
 	// ── 8. Reactive ──────────────────────────────────────────────────────────
-	"Lio/reactivex/", // RxJava 2 + RxJava 3 root
-	"Lcom/jakewharton/rxbinding/",
+	"Lio/reactivex/",        // RxJava 2 + RxJava 3 root
 	"Lorg/reactivestreams/", // Reactive Streams spec (used by RxJava)
 
 	// ── 9. Serialization / Parsing ───────────────────────────────────────────
@@ -209,8 +205,7 @@ var smaliKnownPrefixes = []string{
 	"Lcom/j256/ormlite/",        // ORMLite
 
 	// ── 18. Logging ──────────────────────────────────────────────────────────
-	"Ltimber/",                 // Timber root
-	"Lcom/jakewharton/timber/", // Timber full path
+	"Ltimber/", // Timber root
 	"Lch/qos/logback/",
 	"Lorg/slf4j/",
 
@@ -225,8 +220,7 @@ var smaliKnownPrefixes = []string{
 	"Lcom/github/chrisbanes/",          // PhotoView
 
 	// ── 20. Date / Time ──────────────────────────────────────────────────────
-	"Lcom/jakewharton/threetenabp/", // ThreeTenABP — Java 8 time backport
-	"Lorg/threeten/",                // ThreeTen-Backport core
+	"Lorg/threeten/", // ThreeTen-Backport core
 
 	// ── 21. JetBrains / IntelliJ annotations ─────────────────────────────────
 	"Lorg/intellij/",
@@ -259,8 +253,9 @@ var smaliKnownPrefixes = []string{
 
 // isSmaliDescriptor — combined L1 + L2 filter
 func isSmaliDescriptor(s string) bool {
-	// L1: Generic — starts with L and has 2+ slashes (class path structure)
-	if strings.HasPrefix(s, "L") {
+	// L1: True smali class descriptor — starts with L, has 2+ slashes, ends with ;
+	// e.g. Lcom/example/MyClass; — the ; terminator is mandatory in valid smali
+	if strings.HasPrefix(s, "L") && strings.HasSuffix(s, ";") {
 		slashes := strings.Count(s, "/")
 		if slashes >= 2 {
 			return true
