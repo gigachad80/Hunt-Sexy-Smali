@@ -281,5 +281,5 @@ Contact :
 
 </div>
 
-##### First release : April 28, 2026
-##### Last updated : April 28,2026
+##### First release : April 28th, 2026
+##### Last updated : May 4th,2026
